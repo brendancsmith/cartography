@@ -276,6 +276,7 @@ def plot_data_map(dataframe: pd.DataFrame,
                            ax=ax0,
                            data=dataframe,
                            hue=hue,
+                           hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
                            palette=pal,
                            style=style,
                            s=30)
