@@ -327,7 +327,9 @@ def plot_data_map(dataframe: pd.DataFrame,
         plott1[0].set_ylabel('count')
 
         plot2 = sns.countplot(x="correct.", data=dataframe.sort_values("correct."), ax=ax3, color='#86bf91')
-        plot2.set_xticklabels(["0.0","","","","","0.5","","","","","1.0"])
+        u_ticks = [float(t) for t in sorted(dataframe["correct."].unique().tolist())]
+        # only label the min, middle and max value
+        plot2.set_xticklabels([t if (t==min(u_ticks) or t==max(u_ticks) or t==u_ticks[len(u_ticks)//2]) else "" for t in u_ticks])
         ax3.xaxis.grid(True) # Show the vertical gridlines
         plot2.set_title('')
         plot2.set_xlabel('correctness')
