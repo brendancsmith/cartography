@@ -326,7 +326,8 @@ def plot_data_map(dataframe: pd.DataFrame,
         plott1[0].set_xlabel('variability')
         plott1[0].set_ylabel('count')
 
-        plot2 = sns.countplot(x="correct.", data=dataframe, ax=ax3, color='#86bf91')
+        plot2 = sns.countplot(x="correct.", data=dataframe.sort_values("correct."), ax=ax3, color='#86bf91')
+        plot2.set_xticklabels(["0.0","","","","","0.5","","","","","1.0"])
         ax3.xaxis.grid(True) # Show the vertical gridlines
         plot2.set_title('')
         plot2.set_xlabel('correctness')
