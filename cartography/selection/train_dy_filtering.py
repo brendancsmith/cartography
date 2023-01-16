@@ -277,6 +277,7 @@ def plot_data_map(dataframe: pd.DataFrame,
                            data=dataframe,
                            hue=hue,
                            hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                           #legend="full",
                            palette=pal,
                            style=style,
                            s=30)
@@ -292,9 +293,10 @@ def plot_data_map(dataframe: pd.DataFrame,
                                                           ha="center",
                                                           rotation=350,
                                                            bbox=bb(bbc))
+
     an1 = func_annotate("ambiguous", xyc=(0.9, 0.5), bbc='black')
-    an2 = func_annotate("easy-to-learn", xyc=(0.27, 0.85), bbc='r')
-    an3 = func_annotate("hard-to-learn", xyc=(0.35, 0.25), bbc='b')
+    an2 = func_annotate("easy-to-learn", xyc=(0.27, 0.85), bbc='b')
+    an3 = func_annotate("hard-to-learn", xyc=(0.35, 0.25), bbc='r')
 
 
     if not show_hist:
@@ -303,6 +305,8 @@ def plot_data_map(dataframe: pd.DataFrame,
         plot.legend(fancybox=True, shadow=True,  ncol=1)
     plot.set_xlabel('variability')
     plot.set_ylabel('confidence')
+
+    plot.legend_.set_title('correctness')
 
     if show_hist:
         plot.set_title(f"{title}-{model} Data Map", fontsize=17)
@@ -315,19 +319,18 @@ def plot_data_map(dataframe: pd.DataFrame,
         plott0 = dataframe.hist(column=['confidence'], ax=ax1, color='#622a87')
         plott0[0].set_title('')
         plott0[0].set_xlabel('confidence')
-        plott0[0].set_ylabel('density')
+        plott0[0].set_ylabel('count')
 
         plott1 = dataframe.hist(column=['variability'], ax=ax2, color='teal')
         plott1[0].set_title('')
         plott1[0].set_xlabel('variability')
-        plott1[0].set_ylabel('density')
+        plott1[0].set_ylabel('count')
 
         plot2 = sns.countplot(x="correct.", data=dataframe, ax=ax3, color='#86bf91')
         ax3.xaxis.grid(True) # Show the vertical gridlines
-
         plot2.set_title('')
         plot2.set_xlabel('correctness')
-        plot2.set_ylabel('density')
+        plot2.set_ylabel('count')
 
     fig.tight_layout()
     filename = f'{plot_dir}/{title}_{model}.pdf' if show_hist else f'figures/compact_{title}_{model}.pdf'
