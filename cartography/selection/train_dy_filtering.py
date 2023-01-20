@@ -138,7 +138,8 @@ def compute_train_dy_metrics(training_dynamics, args):
                   'confidence',
                   'variability',
                   'correctness',
-                  'forgetfulness',]
+                  'forgetfulness',
+                  'gold',]
   df = pd.DataFrame([[guid,
                       i,
                       threshold_closeness_[guid],
@@ -146,6 +147,7 @@ def compute_train_dy_metrics(training_dynamics, args):
                       variability_[guid],
                       correctness_[guid],
                       forgetfulness_[guid],
+                      training_dynamics[guid]['gold'],
                       ] for i, guid in enumerate(correctness_)], columns=column_names)
 
   df_train = pd.DataFrame([[i,
@@ -271,16 +273,29 @@ def plot_data_map(dataframe: pd.DataFrame,
     # Choose a palette.
     pal = sns.diverging_palette(260, 15, n=num_hues, sep=10, center="dark")
 
-    plot = sns.scatterplot(x=main_metric,
-                           y=other_metric,
-                           ax=ax0,
-                           data=dataframe,
-                           hue=hue,
-                           hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
-                           #legend="full",
-                           palette=pal,
-                           style=style,
-                           s=30)
+    if hue_metric == "correct.":
+      plot = sns.scatterplot(x=main_metric,
+                            y=other_metric,
+                            ax=ax0,
+                            data=dataframe,
+                            hue=hue_metric,
+                            hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                            #legend="full",
+                            palette=pal,
+                            style=style,
+                            s=30)
+    else:
+      plot = sns.scatterplot(x=main_metric,
+                            y=other_metric,
+                            ax=ax0,
+                            data=dataframe,
+                            hue=hue_metric,
+                            #hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                            #legend="full",
+                            #palette=pal,
+                            #style=style,
+                            s=30)
+
 
     # Annotate Regions.
     bb = lambda c: dict(boxstyle="round,pad=0.3", ec=c, lw=2, fc="white")
@@ -306,7 +321,12 @@ def plot_data_map(dataframe: pd.DataFrame,
     plot.set_xlabel('variability')
     plot.set_ylabel('confidence')
 
-    plot.legend_.set_title('correctness')
+    if hue_metric == "correct.":
+      plot.legend_.set_title('correctness')
+    elif hue_metric == "gold":
+      plot.legend_.set_title('true class')
+    else:
+      plot.legend_.set_title(hue_metric)
 
     if show_hist:
         plot.set_title(f"{title}-{model} Data Map", fontsize=17)
@@ -397,6 +417,11 @@ if __name__ == "__main__":
   parser.add_argument("--model",
                       default="RoBERTa",
                       help="Model for which data map is being plotted")
+  parser.add_argument("--plot_hue",
+                      choices=("correct.",
+                               "gold"),
+                      default="correct.",
+                      help="Decide, whether correctness or gold standard should serve as hue in map.")
 
   args = parser.parse_args()
 
@@ -427,4 +452,4 @@ if __name__ == "__main__":
     assert args.plots_dir
     if not os.path.exists(args.plots_dir):
       os.makedirs(args.plots_dir)
-    plot_data_map(train_dy_metrics, args.plots_dir, title=args.task_name, show_hist=True, model=args.model)
+    plot_data_map(train_dy_metrics, args.plots_dir, title=args.task_name, show_hist=True, model=args.model, hue_metric=args.plot_hue)
