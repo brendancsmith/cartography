@@ -438,7 +438,7 @@ if __name__ == "__main__":
     logger.info(f"Total epochs found: {args.burn_out}")
   train_dy_metrics, _ = compute_train_dy_metrics(training_dynamics, args)
 
-  burn_out_str = f"_{args.burn_out}" if args.burn_out > total_epochs else ""
+  burn_out_str = f"_{args.burn_out}" if args.burn_out < total_epochs else ""
   train_dy_filename = os.path.join(args.model_dir, f"td_metrics_{args.task_name}{args.model}{burn_out_str}.jsonl")
   train_dy_metrics.to_json(train_dy_filename,
                            orient='records',
