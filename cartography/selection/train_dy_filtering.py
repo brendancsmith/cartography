@@ -488,4 +488,4 @@ if __name__ == "__main__":
         if not os.path.exists(args.plots_dir):
             os.makedirs(args.plots_dir)
         plot_data_map(train_dy_metrics, args.plots_dir, title=args.title, task=args.task_name,
-                      show_hist=True, model=args.model, hue_metric=args.plot_hue)
+                      show_hist=True, model=args.model, hue_metric=args.hue)
