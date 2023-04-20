@@ -21,7 +21,7 @@ import tqdm
 from collections import defaultdict
 from typing import List
 
-from cartography.data_utils import read_data, read_jsonl, copy_dev_test
+from cartography.data_utils import read_data, copy_dev_test
 from cartography.selection.selection_utils import read_training_dynamics
 
 # TODO(SS): Named tuple for tasks and filtering methods.
