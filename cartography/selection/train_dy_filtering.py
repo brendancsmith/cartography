@@ -138,7 +138,8 @@ def compute_train_dy_metrics(training_dynamics, args):
                   'confidence',
                   'variability',
                   'correctness',
-                  'forgetfulness',]
+                  'forgetfulness',
+                  'gold',]
   df = pd.DataFrame([[guid,
                       i,
                       threshold_closeness_[guid],
@@ -146,6 +147,7 @@ def compute_train_dy_metrics(training_dynamics, args):
                       variability_[guid],
                       correctness_[guid],
                       forgetfulness_[guid],
+                      training_dynamics[guid]['gold'],
                       ] for i, guid in enumerate(correctness_)], columns=column_names)
 
   df_train = pd.DataFrame([[i,
@@ -275,14 +277,29 @@ def plot_data_map(dataframe: pd.DataFrame,
     # Choose a palette.
     pal = sns.diverging_palette(260, 15, n=num_hues, sep=10, center="dark")
 
-    plot = sns.scatterplot(x=main_metric,
-                           y=other_metric,
-                           ax=ax0,
-                           data=dataframe,
-                           hue=hue,
-                           palette=pal,
-                           style=style,
-                           s=30)
+    if hue_metric == "correct.":
+      plot = sns.scatterplot(x=main_metric,
+                            y=other_metric,
+                            ax=ax0,
+                            data=dataframe,
+                            hue=hue_metric,
+                            hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                            #legend="full",
+                            palette=pal,
+                            style=style,
+                            s=30)
+    else:
+      plot = sns.scatterplot(x=main_metric,
+                            y=other_metric,
+                            ax=ax0,
+                            data=dataframe,
+                            hue=hue_metric,
+                            #hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                            #legend="full",
+                            #palette=pal,
+                            #style=style,
+                            s=30)
+
 
     # Annotate Regions.
     bb = lambda c: dict(boxstyle="round,pad=0.3", ec=c, lw=2, fc="white")
@@ -295,9 +312,10 @@ def plot_data_map(dataframe: pd.DataFrame,
                                                           ha="center",
                                                           rotation=350,
                                                            bbox=bb(bbc))
+
     an1 = func_annotate("ambiguous", xyc=(0.9, 0.5), bbc='black')
-    an2 = func_annotate("easy-to-learn", xyc=(0.27, 0.85), bbc='r')
-    an3 = func_annotate("hard-to-learn", xyc=(0.35, 0.25), bbc='b')
+    an2 = func_annotate("easy-to-learn", xyc=(0.27, 0.85), bbc='b')
+    an3 = func_annotate("hard-to-learn", xyc=(0.35, 0.25), bbc='r')
 
 
     if not show_hist:
@@ -306,6 +324,13 @@ def plot_data_map(dataframe: pd.DataFrame,
         plot.legend(fancybox=True, shadow=True,  ncol=1)
     plot.set_xlabel('variability')
     plot.set_ylabel('confidence')
+
+    if hue_metric == "correct.":
+      plot.legend_.set_title('correctness')
+    elif hue_metric == "gold":
+      plot.legend_.set_title('true class')
+    else:
+      plot.legend_.set_title(hue_metric)
 
     if show_hist:
         plot.set_title(f"{title}-{model} Data Map", fontsize=17)
@@ -318,19 +343,21 @@ def plot_data_map(dataframe: pd.DataFrame,
         plott0 = dataframe.hist(column=['confidence'], ax=ax1, color='#622a87')
         plott0[0].set_title('')
         plott0[0].set_xlabel('confidence')
-        plott0[0].set_ylabel('density')
+        plott0[0].set_ylabel('count')
 
         plott1 = dataframe.hist(column=['variability'], ax=ax2, color='teal')
         plott1[0].set_title('')
         plott1[0].set_xlabel('variability')
-        plott1[0].set_ylabel('density')
+        plott1[0].set_ylabel('count')
 
-        plot2 = sns.countplot(x="correct.", data=dataframe, ax=ax3, color='#86bf91')
+        plot2 = sns.countplot(x="correct.", data=dataframe.sort_values("correct."), ax=ax3, color='#86bf91')
+        u_ticks = [float(t) for t in sorted(dataframe["correct."].unique().tolist())]
+        # only label the min, middle and max value
+        plot2.set_xticklabels([t if (t==min(u_ticks) or t==max(u_ticks) or t==u_ticks[len(u_ticks)//2]) else "" for t in u_ticks])
         ax3.xaxis.grid(True) # Show the vertical gridlines
-
         plot2.set_title('')
         plot2.set_xlabel('correctness')
-        plot2.set_ylabel('density')
+        plot2.set_ylabel('count')
 
     fig.tight_layout()
     filename = f'{plot_dir}/{title}_{model}.pdf' if show_hist else f'figures/compact_{title}_{model}.pdf'
@@ -394,6 +421,11 @@ if __name__ == "__main__":
   parser.add_argument("--model",
                       default="RoBERTa",
                       help="Model for which data map is being plotted")
+  parser.add_argument("--plot_hue",
+                      choices=("correct.",
+                               "gold"),
+                      default="correct.",
+                      help="Decide, whether correctness or gold standard should serve as hue in map.")
 
   args = parser.parse_args()
 
@@ -407,7 +439,7 @@ if __name__ == "__main__":
   train_dy_metrics, _ = compute_train_dy_metrics(training_dynamics, args)
 
   burn_out_str = f"_{args.burn_out}" if args.burn_out > total_epochs else ""
-  train_dy_filename = os.path.join(args.model_dir, f"td_metrics{burn_out_str}.jsonl")
+  train_dy_filename = os.path.join(args.model_dir, f"td_metrics_{args.task_name}{args.model}{burn_out_str}.jsonl")
   train_dy_metrics.to_json(train_dy_filename,
                            orient='records',
                            lines=True)
@@ -424,4 +456,4 @@ if __name__ == "__main__":
     assert args.plots_dir
     if not os.path.exists(args.plots_dir):
       os.makedirs(args.plots_dir)
-    plot_data_map(train_dy_metrics, args.plots_dir, title=args.task_name, show_hist=True, model=args.model)
+    plot_data_map(train_dy_metrics, args.plots_dir, title=args.task_name, show_hist=True, model=args.model, hue_metric=args.plot_hue)
