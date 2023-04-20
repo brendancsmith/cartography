@@ -258,13 +258,14 @@ def write_filtered_data(args, train_dy_metrics):
 def plot_data_map(dataframe: pd.DataFrame,
                   plot_dir: os.path,
                   hue_metric: str = 'correct.',
-                  title: str = '',
+                  title: str = None,
+                  task: str = '',
                   model: str = 'RoBERTa',
                   show_hist: bool = False,
                   max_instances_to_plot=55000):
     # Set style.
     sns.set(style='whitegrid', font_scale=1.6, font='Georgia', context='paper')
-    logger.info(f"Plotting figure for {title} using the {model} model ...")
+    logger.info(f"Plotting figure for {task} using the {model} model ...")
 
     # Subsample data to plot, so the plot is not too busy.
     dataframe = dataframe.sample(
@@ -349,7 +350,10 @@ def plot_data_map(dataframe: pd.DataFrame,
         plot.legend_.set_title(hue_metric)
 
     if show_hist:
-        plot.set_title(f"{title}-{model} Data Map", fontsize=17)
+        if title is None:
+            title = f'{task}-{model} Data Map'
+
+        plot.set_title(title, fontsize=17)
 
         # Make the histograms.
         ax1 = fig.add_subplot(gs[0, 1])
@@ -379,7 +383,7 @@ def plot_data_map(dataframe: pd.DataFrame,
         plot2.set_ylabel('count')
 
     fig.tight_layout()
-    filename = f'{plot_dir}/{title}_{model}.pdf' if show_hist else f'figures/compact_{title}_{model}.pdf'
+    filename = f'{plot_dir}/{task}_{model}.pdf' if show_hist else f'figures/compact_{task}_{model}.pdf'
     fig.savefig(filename, dpi=300)
     logger.info(f"Plot saved to {filename}")
 
@@ -442,8 +446,9 @@ if __name__ == "__main__":
                         default="RoBERTa",
                         help="Model for which data map is being plotted")
     parser.add_argument("--title",
-                        default="RoBERTa",
-                        help="Model for which data map is being plotted")
+                        type=str,
+                        default=None,
+                        help="Plot title")
     parser.add_argument("--hue",
                         choices=("correct.",
                                  "gold"),
@@ -482,5 +487,5 @@ if __name__ == "__main__":
         assert args.plots_dir
         if not os.path.exists(args.plots_dir):
             os.makedirs(args.plots_dir)
-        plot_data_map(train_dy_metrics, args.plots_dir, title=args.task_name,
+        plot_data_map(train_dy_metrics, args.plots_dir, title=args.title, task=args.task_name,
                       show_hist=True, model=args.model, hue_metric=args.plot_hue)
