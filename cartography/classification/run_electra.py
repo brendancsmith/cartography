@@ -55,22 +55,25 @@ def main():
     # example as follows:
     # {"premise": "Two women are embracing.", "hypothesis": "The sisters are hugging.", "label": 1}
     
-    if args.dataset and (args.dataset.endswith('.json') or args.dataset.endswith('.jsonl')):
-        dataset_id = None
+    if args.dataset is None:
+        default_datasets = {'qa': 'squad', 'nli': 'snli'}
+        args.dataset = default_datasets[args.task]
+    elif args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
         # Load from local json/jsonl file
         dataset = datasets.load_dataset('json', data_files=args.dataset)
         # By default, the "json" dataset loader places all examples in the train split,
         # so if we want to use a jsonl file for evaluation we need to get the "train" split
         # from the loaded dataset
         eval_split = 'train'
-    else:
-        default_datasets = {'qa': ('squad',), 'nli': ('snli',)}
-        dataset_id = tuple(args.dataset.split(':')) if args.dataset is not None else \
-            default_datasets[args.task]
+    
+    dataset_id = args.dataset
+    if dataset is None:
         # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
-        eval_split = 'validation_matched' if dataset_id == ('glue', 'mnli') else 'validation'
+        eval_split = 'validation_matched' if dataset_id == 'glue:mnli' else 'validation'
+        
         # Load the raw data
-        dataset = datasets.load_dataset(*dataset_id)
+        dataset = datasets.load_dataset(*dataset_id.split(':'))
+        
     
     # NLI models need to have the output label count specified (label 0 is "entailed", 1 is "neutral", and 2 is "contradiction")
     task_kwargs = {'num_labels': 3} if args.task == 'nli' else {}
@@ -95,7 +98,7 @@ def main():
         raise ValueError('Unrecognized task name: {}'.format(args.task))
 
     print("Preprocessing data... (this takes a little bit, should only happen once per dataset)")
-    if dataset_id == ('snli',):
+    if dataset_id == 'snli':
         # remove SNLI examples with no label
         dataset = dataset.filter(lambda ex: ex['label'] != -1)
     
@@ -117,8 +120,8 @@ def main():
 
         if not os.path.exists(training_args.output_dir):
             os.mkdir(training_args.output_dir)
-
-        glue_data_dir = os.path.join(training_args.output_dir, f'glue_data/{dataset_id or args.dataset}')
+        
+        glue_data_dir = os.path.join(training_args.output_dir, f'glue_data/{dataset_id}')
         if not os.path.exists(glue_data_dir):
             os.makedirs(glue_data_dir)
 
