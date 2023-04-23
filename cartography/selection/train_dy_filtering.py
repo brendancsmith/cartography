@@ -244,9 +244,9 @@ def write_filtered_data(args, train_dy_metrics):
                     f"{args.metric} = {selected.iloc[idx][args.metric]:.4f}")
 
                 selected_id = selected.iloc[idx]["guid"]
-                if args.task_name in ["SNLI", "MNLI", "SQUAD"]:
+                if args.task_name in ["SNLI", "MNLI"]:
                     selected_id = int(selected_id)
-                elif args.task_name == "WINOGRANDE":
+                elif args.task_name in ["WINOGRANDE", "SQUAD"]:
                     selected_id = str(int(selected_id))
                 record = train_numeric[selected_id]
                 outfile.write(record if args.task_name ==
@@ -464,5 +464,6 @@ if __name__ == "__main__":
         assert args.plots_dir
         if not os.path.exists(args.plots_dir):
             os.makedirs(args.plots_dir)
-            plot_data_map(train_dy_metrics, args.plots_dir, title=args.title,
-                          task=args.task.name, show_hist=True, model=args.model)
+        
+        plot_data_map(train_dy_metrics, args.plots_dir, title=args.title,
+                      task=args.task.name, show_hist=True, model=args.model)
