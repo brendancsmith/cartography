@@ -294,29 +294,16 @@ def plot_data_map(dataframe: pd.DataFrame,
     # Choose a palette.
     pal = sns.diverging_palette(260, 15, n=num_hues, sep=10, center="dark")
 
-    if hue_metric == "correct.":
-        plot = sns.scatterplot(x=main_metric,
-                               y=other_metric,
-                               ax=ax0,
-                               data=dataframe,
-                               hue=hue_metric,
-                               hue_order=sorted(
-                                   dataframe[hue].unique().tolist(), reverse=True),
-                               # legend="full",
-                               palette=pal,
-                               style=style,
-                               s=30)
-    else:
-        plot = sns.scatterplot(x=main_metric,
-                               y=other_metric,
-                               ax=ax0,
-                               data=dataframe,
-                               hue=hue_metric,
-                               # hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
-                               # legend="full",
-                               # palette=pal,
-                               # style=style,
-                               s=30)
+    plot = sns.scatterplot(x=main_metric,
+                           y=other_metric,
+                           ax=ax0,
+                           data=dataframe,
+                           hue=hue,
+                           hue_order=sorted(dataframe[hue].unique().tolist(), reverse=True),
+                           #legend="full",
+                           palette=pal,
+                           style=style,
+                           s=30)
 
     # Annotate Regions.
     def bb(c): return dict(boxstyle="round,pad=0.3", ec=c, lw=2, fc="white")
@@ -342,12 +329,7 @@ def plot_data_map(dataframe: pd.DataFrame,
     plot.set_xlabel('variability')
     plot.set_ylabel('confidence')
 
-    if hue_metric == "correct.":
-        plot.legend_.set_title('correctness')
-    elif hue_metric == "gold":
-        plot.legend_.set_title('true class')
-    else:
-        plot.legend_.set_title(hue_metric)
+    plot.legend_.set_title('correctness')
 
     if show_hist:
         if title is None:
@@ -433,8 +415,8 @@ if __name__ == "__main__":
                         help="Output directory where filtered datasets are to be written.")
     parser.add_argument("--worst",
                         action="store_true",
-                        help="Select from the opposite end of the spectrum according"
-                        "to metric, for baselines")
+                        help="Select from the opposite end of the spectrum acc. to metric,"
+                            "for baselines")
     parser.add_argument("--both_ends",
                         action="store_true",
                         help="Select from both ends of the spectrum acc. to metric,")
@@ -446,14 +428,9 @@ if __name__ == "__main__":
                         default="RoBERTa",
                         help="Model for which data map is being plotted")
     parser.add_argument("--title",
-                        type=str,
-                        default=None,
-                        help="Plot title")
-    parser.add_argument("--hue",
-                        choices=("correct.",
-                                 "gold"),
-                        default="correct.",
-                        help="Decide, whether correctness or gold standard should serve as hue in map.")
+                            type=str,
+                            default=None,
+                            help="Plot title")
 
     args = parser.parse_args()
 
@@ -487,5 +464,5 @@ if __name__ == "__main__":
         assert args.plots_dir
         if not os.path.exists(args.plots_dir):
             os.makedirs(args.plots_dir)
-        plot_data_map(train_dy_metrics, args.plots_dir, title=args.title, task=args.task_name,
-                      show_hist=True, model=args.model, hue_metric=args.hue)
+            plot_data_map(train_dy_metrics, args.plots_dir, title=args.title,
+                          task=args.task.name, show_hist=True, model=args.model)
