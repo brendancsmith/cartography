@@ -446,7 +446,7 @@ if __name__ == "__main__":
 
     burn_out_str = f"_{args.burn_out}" if args.burn_out < total_epochs else ""
     train_dy_filename = os.path.join(
-        args.model_dir, f"td_metrics_{args.task_name}{args.model}{burn_out_str}.jsonl")
+        args.model_dir, f"td_metrics_{args.task_name}_{args.model}{burn_out_str}.jsonl")
     train_dy_metrics.to_json(train_dy_filename,
                              orient='records',
                              lines=True)
@@ -466,4 +466,4 @@ if __name__ == "__main__":
             os.makedirs(args.plots_dir)
         
         plot_data_map(train_dy_metrics, args.plots_dir, title=args.title,
-                      task=args.task.name, show_hist=True, model=args.model)
+                      task=args.task_name, show_hist=True, model=args.model)
