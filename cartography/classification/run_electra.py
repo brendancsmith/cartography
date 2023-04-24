@@ -56,9 +56,10 @@ def main():
     # {"premise": "Two women are embracing.", "hypothesis": "The sisters are hugging.", "label": 1}
     
     dataset = None
+    dataset_id = args.dataset
     if args.dataset is None:
         default_datasets = {'qa': 'squad', 'nli': 'snli'}
-        dataset = default_datasets[args.task]
+        dataset_id = default_datasets[args.task]
     elif args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
         # Load from local json/jsonl file
         dataset = datasets.load_dataset('json', data_files=args.dataset)
@@ -67,7 +68,7 @@ def main():
         # from the loaded dataset
         eval_split = 'train'
     
-    dataset_id = args.dataset
+    
     if dataset is None:
         # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
         eval_split = 'validation_matched' if dataset_id == 'glue:mnli' else 'validation'
