@@ -55,9 +55,10 @@ def main():
     # example as follows:
     # {"premise": "Two women are embracing.", "hypothesis": "The sisters are hugging.", "label": 1}
     
+    dataset = None
     if args.dataset is None:
         default_datasets = {'qa': 'squad', 'nli': 'snli'}
-        args.dataset = default_datasets[args.task]
+        dataset = default_datasets[args.task]
     elif args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
         # Load from local json/jsonl file
         dataset = datasets.load_dataset('json', data_files=args.dataset)
