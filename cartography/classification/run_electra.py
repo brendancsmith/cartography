@@ -33,7 +33,7 @@ def main():
                       help="""This argument specifies the base model to fine-tune.
         This should either be a HuggingFace model ID (see https://huggingface.co/models)
         or a path to a saved model checkpoint (a folder containing config.json and pytorch_model.bin).""")
-    argp.add_argument('--task', type=str, choices=['nli', 'qa'], required=True,
+    argp.add_argument('--task', type=str, choices=['nli', 'qa'], default='qa',
                       help="""This argument specifies which task to train/evaluate on.
         Pass "nli" for natural language inference or "qa" for question answering.
         By default, "nli" will use the SNLI dataset, and "qa" will use the SQuAD dataset.""")
@@ -71,7 +71,13 @@ def main():
     
     if dataset is None:
         # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
-        eval_split = 'validation_matched' if dataset_id == 'glue:mnli' else 'validation'
+        
+        if dataset_id == 'glue:mnli':
+            eval_split = 'validation_matched'
+        elif dataset_id.split(':')[0] == 'squadshifts':
+            eval_split = 'test'
+        else:
+            eval_split = 'validation'
         
         # Load the raw data
         dataset = datasets.load_dataset(*dataset_id.split(':'))
@@ -120,14 +126,9 @@ def main():
         
         train_dataset = train_dataset.map(index)
 
-        if not os.path.exists(training_args.output_dir):
-            os.mkdir(training_args.output_dir)
+        os.makedirs(training_args.output_dir, exist_ok=True)
+        train_dataset.to_json(os.path.join(training_args.output_dir, 'train.jsonl'))
         
-        glue_data_dir = os.path.join(training_args.output_dir, f'glue_data/{dataset_id}')
-        if not os.path.exists(glue_data_dir):
-            os.makedirs(glue_data_dir)
-
-        train_dataset.to_json(os.path.join(glue_data_dir, 'train.jsonl'))
         train_dataset_featurized = train_dataset.map(
             prepare_train_dataset,
             batched=True,
@@ -138,6 +139,9 @@ def main():
         eval_dataset = dataset[eval_split]
         if args.max_eval_samples:
             eval_dataset = eval_dataset.select(range(args.max_eval_samples))
+
+        os.makedirs(training_args.output_dir, exist_ok=True)
+        train_dataset.to_json(os.path.join(training_args.output_dir, 'eval.jsonl'))
         eval_dataset_featurized = eval_dataset.map(
             prepare_eval_dataset,
             batched=True,
