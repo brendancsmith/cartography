@@ -56,12 +56,13 @@ def main():
     # {"premise": "Two women are embracing.", "hypothesis": "The sisters are hugging.", "label": 1}
     
     dataset = None
-    dataset_id = args.dataset
+    dataset_id = None
     if args.dataset is None:
         default_datasets = {'qa': 'squad', 'nli': 'snli'}
         dataset_id = default_datasets[args.task]
     elif args.dataset.endswith('.json') or args.dataset.endswith('.jsonl'):
         # Load from local json/jsonl file
+        dataset_id = 'json'
         dataset = datasets.load_dataset('json', data_files=args.dataset)
         # By default, the "json" dataset loader places all examples in the train split,
         # so if we want to use a jsonl file for evaluation we need to get the "train" split
@@ -71,7 +72,7 @@ def main():
     
     if dataset is None:
         # MNLI has two validation splits (one with matched domains and one with mismatched domains). Most datasets just have one "validation" split
-        
+        dataset_id = dataset_id or args.dataset
         if dataset_id == 'glue:mnli':
             eval_split = 'validation_matched'
         elif dataset_id.split(':')[0] == 'squadshifts':
@@ -119,15 +120,18 @@ def main():
         if args.max_train_samples:
             train_dataset = train_dataset.select(range(args.max_train_samples))
         
-        example_id_to_index = {k: i for i, k in enumerate(train_dataset["id"])}
-        def index(example):
-            example['id'] = str(example_id_to_index[example['id']])
-            return example
-        
-        train_dataset = train_dataset.map(index)
+        if dataset_id == 'squad':
+            example_id_to_index = {k: i for i, k in enumerate(train_dataset["id"])}
+            def index(example):
+                example['id'] = str(example_id_to_index[example['id']])
+                return example
+            
+            train_dataset = train_dataset.map(index)
 
-        os.makedirs(training_args.output_dir, exist_ok=True)
+        data_dir = os.path.join(training_args.output_dir, f'data/{dataset_id}')
+        os.makedirs(data_dir, exist_ok=True)
         train_dataset.to_json(os.path.join(training_args.output_dir, 'train.jsonl'))
+        
         
         train_dataset_featurized = train_dataset.map(
             prepare_train_dataset,
