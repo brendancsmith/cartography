@@ -8,8 +8,8 @@ from transformers import Trainer, EvalPrediction, TrainerCallback, TrainingArgum
 from transformers.trainer_utils import PredictionOutput, seed_worker
 from torch.utils.data import DataLoader
 from typing import Tuple
-from tqdm.auto import tqdm
-import datasets
+from tqdm.autonotebook import tqdm
+from numpyencoder import NumpyEncoder
 
 QA_MAX_ANSWER_LENGTH = 30
 
@@ -80,12 +80,13 @@ def prepare_train_dataset_qa(examples, tokenizer: Tokenizer, max_seq_length=None
         sequence_ids = tokenized_examples.sequence_ids(i)
         # from the feature idx to sample idx
         sample_index = sample_mapping[i]
-        # get the answer for a feature
-        answers = examples["answers"][sample_index]
-
+        
         # get the train id
         train_id = int(examples['id'][sample_index])
         tokenized_examples['train_ids'].append(train_id)
+
+        # get the answer for a feature
+        answers = examples["answers"][sample_index]
 
         if len(answers["answer_start"]) == 0:
             tokenized_examples["start_positions"].append(cls_index)
@@ -241,23 +242,23 @@ def postprocess_qa_predictions(examples,
                     )
 
         # Only keep the best `n_best_size` predictions.
-        predictions2 = sorted(prelim_predictions, key=lambda x: x["score"],
+        top_predictions = sorted(prelim_predictions, key=lambda x: x["score"],
                              reverse=True)[:n_best_size]
 
         # Use the offsets to gather the answer text in the original context.
         context = example["context"]
-        for pred in predictions2:
+        for pred in top_predictions:
             offsets = pred.pop("offsets")
             pred["text"] = context[offsets[0]: offsets[1]]
 
         # In the very rare edge case we have not a single non-null prediction,
         # we create a fake prediction to avoid failure.
-        if len(predictions2) == 0 or (
-                len(predictions2) == 1 and predictions2[0]["text"] == ""):
-            predictions2.insert(0, {"text": "empty", "start_logit": 0.0,
+        if len(top_predictions) == 0 or (
+                len(top_predictions) == 1 and top_predictions[0]["text"] == ""):
+            top_predictions.insert(0, {"text": "empty", "start_logit": 0.0,
                                    "end_logit": 0.0, "score": 0.0})
 
-        all_predictions[example["id"]] = predictions2[0]["text"]
+        all_predictions[example["id"]] = top_predictions[0]["text"]
     return all_predictions
 
 
@@ -354,21 +355,16 @@ class QuestionAnsweringTrainer(Trainer):
         loss = outputs.get('loss')
         return (loss, outputs) if return_outputs else loss
 
-class NumpyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        if isinstance(obj, np.floating):
-            return float(obj)
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
-
 class TrainingDynamicsCallback(TrainerCallback):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.out_dir = os.path.join(args.output_dir, 'training_dynamics')
         self.out_file = None
         self.epoch = None
+
+    def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        if not os.path.exists(self.out_dir):
+            os.makedirs(self.out_dir)
 
     def aggregate(self, train_ids, train_logits, train_golds):
         if self.out_file is None:
@@ -385,11 +381,8 @@ class TrainingDynamicsCallback(TrainerCallback):
 
     def on_epoch_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         self.epoch = int(state.epoch)
-        out_dir = os.path.join(args.output_dir, 'training_dynamics')
-        if not os.path.exists(out_dir):
-            os.makedirs(out_dir)
-
-        self.out_file = open(os.path.join(out_dir, f"dynamics_epoch_{self.epoch}.jsonl"), 'a+')
+        self.out_file = open(os.path.join(self.outdir, f"dynamics_epoch_{self.epoch}.jsonl"), 'a+')
 
     def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         self.out_file.close()
+        self.out_file = None
