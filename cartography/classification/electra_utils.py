@@ -354,7 +354,7 @@ class QuestionAnsweringTrainer(Trainer):
         loss = outputs.get('loss')
         return (loss, outputs) if return_outputs else loss
 
-class NpEncoder(json.JSONEncoder):
+class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.integer):
             return int(obj)
@@ -380,7 +380,7 @@ class TrainingDynamicsCallback(TrainerCallback):
                 f"logits_epoch_{self.epoch}": list(logits),
                 "gold": int(gold)
             }
-            json.dump(item, self.out_file, cls=NpEncoder)
+            json.dump(item, self.out_file, cls=NumpyEncoder)
             self.out_file.write('\n')
 
     def on_epoch_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
