@@ -358,11 +358,12 @@ class QuestionAnsweringTrainer(Trainer):
 class TrainingDynamicsCallback(TrainerCallback):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.out_dir = os.path.join(args.output_dir, 'training_dynamics')
+        self.out_dir = None
         self.out_file = None
         self.epoch = None
 
     def on_train_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
+        self.out_dir = os.path.join(args.output_dir, 'training_dynamics')
         if not os.path.exists(self.out_dir):
             os.makedirs(self.out_dir)
 
