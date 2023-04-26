@@ -145,7 +145,7 @@ def main():
             eval_dataset = eval_dataset.select(range(args.max_eval_samples))
 
         os.makedirs(training_args.output_dir, exist_ok=True)
-        train_dataset.to_json(os.path.join(training_args.output_dir, 'eval.jsonl'))
+        eval_dataset.to_json(os.path.join(training_args.output_dir, 'eval.jsonl'))
         eval_dataset_featurized = eval_dataset.map(
             prepare_eval_dataset,
             batched=True,
