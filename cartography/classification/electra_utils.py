@@ -382,7 +382,7 @@ class TrainingDynamicsCallback(TrainerCallback):
 
     def on_epoch_begin(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         self.epoch = int(state.epoch)
-        self.out_file = open(os.path.join(self.outdir, f"dynamics_epoch_{self.epoch}.jsonl"), 'a+')
+        self.out_file = open(os.path.join(self.out_dir, f"dynamics_epoch_{self.epoch}.jsonl"), 'a+')
 
     def on_epoch_end(self, args: TrainingArguments, state: TrainerState, control: TrainerControl, **kwargs):
         self.out_file.close()
