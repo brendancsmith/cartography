@@ -431,6 +431,9 @@ if __name__ == "__main__":
                             type=str,
                             default=None,
                             help="Plot title")
+    parser.add_argument("--small",
+                            action="store_true",
+                            help="Small plot")
 
     args = parser.parse_args()
 
@@ -466,4 +469,4 @@ if __name__ == "__main__":
             os.makedirs(args.plots_dir)
         
         plot_data_map(train_dy_metrics, args.plots_dir, title=args.title,
-                      task=args.task_name, show_hist=True, model=args.model)
+                      task=args.task_name, show_hist=(not args.small), model=args.model)
