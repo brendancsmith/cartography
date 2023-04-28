@@ -365,7 +365,7 @@ def plot_data_map(dataframe: pd.DataFrame,
         plot2.set_ylabel('count')
 
     fig.tight_layout()
-    filename = f'{plot_dir}/{task}_{model}.pdf' if show_hist else f'figures/compact_{task}_{model}.pdf'
+    filename = f'{plot_dir}/{task}_{model}.pdf' if show_hist else f'{plot_dir}/compact_{task}_{model}.pdf'
     fig.savefig(filename, dpi=300)
     logger.info(f"Plot saved to {filename}")
 
